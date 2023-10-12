@@ -7,7 +7,7 @@ extractTokenData:
   call: http.post
   args:
     # TODO: replace with env variable and correct path to TIM endpoint
-    url: "[CHATBOT_BYK_RUUTER]:[CHATBOT_BYK_RUUTER_PORT]:8080/mocks/mock-tim-custom-jwt-userinfo"
+    url: "[CHATBOT_BYK_RUUTER]:[CHATBOT_BYK_RUUTER_PORT]/mocks/mock-tim-custom-jwt-userinfo"
     headers:
       cookie: ${cookie}
     body:
