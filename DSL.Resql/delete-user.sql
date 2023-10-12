@@ -45,11 +45,12 @@ WITH active_administrators AS (SELECT user_id
                                             GROUP BY user_id))
 INSERT
 INTO user_authority (user_id, authority_name, created)
-SELECT :userIdCode, ARRAY []::varchar[], :created::timestamp with time zone
+SELECT :userIdCode as users, ARRAY []::varchar[], :created::timestamp with time zone
 FROM user_authority
 WHERE 1 < (SELECT COUNT(*) FROM active_administrators)
    OR (1 = (SELECT COUNT(*) FROM active_administrators)
-    AND :userIdCode NOT IN (SELECT * FROM active_administrators));
+    AND :userIdCode NOT IN (SELECT * FROM active_administrators))
+GROUP BY users;
 
 WITH active_administrators AS (SELECT user_id
                                FROM user_authority
@@ -60,7 +61,15 @@ WITH active_administrators AS (SELECT user_id
 INSERT
 INTO user_profile_settings (user_id, forwarded_chat_popup_notifications, forwarded_chat_sound_notifications, forwarded_chat_email_notifications, new_chat_popup_notifications, new_chat_sound_notifications, new_chat_email_notifications, use_autocorrect)
 SELECT :userIdCode, false, false, false, false, false, false, false
-FROM user_authority
 WHERE 1 < (SELECT COUNT(*) FROM active_administrators)
    OR (1 = (SELECT COUNT(*) FROM active_administrators)
-    AND :userIdCode NOT IN (SELECT * FROM active_administrators));
+    AND :userIdCode NOT IN (SELECT * FROM active_administrators))
+ON CONFLICT (user_id)
+DO UPDATE SET user_id = :userIdCode, 
+              forwarded_chat_popup_notifications = false,
+              forwarded_chat_sound_notifications = false, 
+              forwarded_chat_email_notifications = false, 
+              new_chat_popup_notifications = false, 
+              new_chat_sound_notifications = false, 
+              new_chat_email_notifications = false, 
+              use_autocorrect = false;

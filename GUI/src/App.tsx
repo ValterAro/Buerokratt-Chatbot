@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -17,29 +17,64 @@ import SettingsWorkingTime from 'pages/Settings/SettingsWorkingTime';
 
 import ChatUnanswered from 'pages/Chat/ChatUnanswered';
 import MonitoringUptime from 'pages/Monitoring/MonitoringUptime';
+import SettingsWelcomeMessage from 'pages/Settings/SettingsWelcomeMessage';
+import SettingsSessionLength from 'pages/Settings/SettingsSessionLength';
+import './locale/et_EE';
+import CsaActivityContext from 'providers/CsaActivityContext';
 
 const App: FC = () => {
   const store = useUserInfoStore();
-  const { data: userInfo } = useQuery<UserInfo>({
-    queryKey: ['cs-custom-jwt-userinfo'],
-    onSuccess: (data) => store.setUserInfo(data),
+  const [chatCsaActive, setChatCsaActive] = useState<boolean>(false);
+  const { data: userInfo } = useQuery<{
+    data: { custom_jwt_userinfo: UserInfo };
+  }>({
+    queryKey: ['cs-custom-jwt-userinfo', 'prod'],
+    onSuccess: (data: { data: { custom_jwt_userinfo: UserInfo } }) => {
+      localStorage.setItem(
+        'exp',
+        data.data.custom_jwt_userinfo.JWTExpirationTimestamp
+      );
+      return store.setUserInfo(data.data.custom_jwt_userinfo);
+    },
   });
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Navigate to='/vestlus/aktiivsed' />} />
-        <Route path='/vestlus/vastamata' element={<ChatUnanswered />} />
-        <Route path='/vestlus/aktiivsed' element={<ChatActive />} />
-        <Route path='/vestlus/ajalugu' element={<ChatHistory />} />
-        <Route path='/haldus/kasutajad' element={<SettingsUsers />} />
-        <Route path='/haldus/vestlusrobot/seaded' element={<SettingsChatSettings />} />
-        <Route path='/haldus/vestlusrobot/erakorralised-teated' element={<SettingsEmergencyNotices />} />
-        <Route path='/haldus/vestlusrobot/välimus-ja-kaitumine' element={<SettingsAppearance />} />
-        <Route path='/haldus/asutuse-tooaeg' element={<SettingsWorkingTime />} />
-        <Route path='/seire/tooaeg' element={<MonitoringUptime />} />
-      </Route>
-    </Routes>
+    <CsaActivityContext.Provider value={{ chatCsaActive, setChatCsaActive }}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Navigate to="/chat/active" />} />
+          <Route path="/chat/unanswered" element={<ChatUnanswered />} />
+          <Route path="/chat/active" element={<ChatActive />} />
+          <Route path="/chat/history" element={<ChatHistory />} />
+          <Route path="/settings/users" element={<SettingsUsers />} />
+          <Route
+            path="/settings/chatbot/settings"
+            element={<SettingsChatSettings />}
+          />
+          <Route
+            path="/settings/chatbot/welcome-message"
+            element={<SettingsWelcomeMessage />}
+          />
+          <Route
+            path="/settings/chatbot/emergency-notices"
+            element={<SettingsEmergencyNotices />}
+          />
+          <Route
+            path="/settings/chatbot/appearance"
+            element={<SettingsAppearance />}
+          />
+          <Route
+            path="/settings/working-time"
+            element={<SettingsWorkingTime />}
+          />
+          <Route
+            path="/settings/session-length"
+            element={<SettingsSessionLength />}
+          />
+          <Route path="/monitoring/uptime" element={<MonitoringUptime />} />
+        </Route>
+      </Routes>
+    </CsaActivityContext.Provider>
   );
 };
 

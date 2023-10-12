@@ -13,6 +13,8 @@
           "method": "post",
           "endpoint": "{dmapper_url}/json/v2/reflect_user",
           "post_body_struct": {
+            "firstName": "{#.firstName}",
+            "lastName": "{#.lastName}",
             "userIdCode": "{#.userIdCode}",
             "displayName": "{#.displayName}",
             "csaTitle": "{#.csaTitle}",
@@ -28,17 +30,13 @@
                   "authorities": "{$.userinfo$.authorities}"
                 },
                 "validate_against": {
-                  "authorities": [
-                    "ROLE_ADMINISTRATOR"
-                  ]
+                  "authorities": ["ROLE_ADMINISTRATOR"]
                 },
                 "validation_type": "MUST_MATCH_ANY"
               },
               "post_body_parameters": {
                 "userinfo": {
-                  "cookies": [
-                    "customJwtCookie"
-                  ],
+                  "cookies": ["customJwtCookie"],
                   "method": "post",
                   "endpoint": "{tim_url}/jwt/custom-jwt-userinfo",
                   "post_body_struct": "customJwtCookie",
@@ -48,7 +46,7 @@
                       "endpoint": "{ruuter_url}/match_input",
                       "post_body_struct": {
                         "input": {
-                          "id_code": "$_validateIdCode({#.userIdCode})"
+                          "id_code": "{#.userIdCode}"
                         },
                         "validate_against": {
                           "id_code": "{#.userIdCode}"
@@ -126,9 +124,11 @@
           "post_body_struct": {
             "created": "$_getInstant()",
             "status": "active",
+            "first_name": "{#.reflect_input#.firstName}",
+            "last_name": "{#.reflect_input#.lastName}",
             "userIdCode": "{#.reflect_input#.userIdCode}",
             "displayName": "{#.reflect_input#.displayName}",
-            "csaTitle":"{#.reflect_input#.csaTitle}",
+            "csaTitle": "{#.reflect_input#.csaTitle}",
             "csa_email": "{#.reflect_input#.csa_email}"
           }
         }
@@ -149,6 +149,50 @@
             "userIdCode": "{#.reflect_input#.userIdCode}",
             "roles": "{#.reflect_input#.roles}",
             "created": "$_getInstant()"
+          }
+        }
+      }
+    },
+    {
+      "set_default_activity": {
+        "verify": {
+          "response": {
+            "ok": "proceed",
+            "nok": "stop"
+          }
+        },
+        "proceed": {
+          "method": "post",
+          "endpoint": "{resql_url}/set-customer-support-status",
+          "post_body_struct": {
+            "userIdCode": "{#.reflect_input#.userIdCode}",
+            "active": "false",
+            "status": "offline",
+            "created": "$_getInstant()"
+          }
+        }
+      }
+    },
+    {
+      "set_user_profile_settings": {
+        "verify": {
+          "response": {
+            "ok": "proceed",
+            "nok": "stop"
+          }
+        },
+        "proceed": {
+          "method": "post",
+          "endpoint": "{resql_url}/set-user-profile-settings",
+          "post_body_struct": {
+            "userId": "{#.reflect_input#.userIdCode}",
+            "forwardedChatPopupNotifications": false,
+            "forwardedChatSoundNotifications": true,
+            "forwardedChatEmailNotifications": false,
+            "newChatPopupNotifications": false,
+            "newChatSoundNotifications": true,
+            "newChatEmailNotifications": false,
+            "useAutocorrect": true
           }
         }
       }
